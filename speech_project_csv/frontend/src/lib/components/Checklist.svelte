@@ -44,6 +44,9 @@
         Object.fromEntries(questions.map((q, i) => [q.id, i]))
     );
 
+    // 자동 이동 플래그 추가
+    let autoMoving = $state(false); // 자동 이동 중 여부
+
     // 🔹 문항 상태 판단 (색상용)
     function getQuestionState(qid) {
         if (questions[currentIdx]?.id === qid) return 'current';
@@ -86,7 +89,8 @@
                 <p style="margin-bottom: 16px;">
                     {questions[currentIdx].id}. {questions[currentIdx].text}
                     <!-- isTTS=true: TTS 재생만, STT 자동 시작 포함 -->
-                    <button onclick={() => {
+                    <button class="speaker-btn {!currentAudio && currentIdx === 0 ? 'pulse-hint' : ''}"
+                            onclick={() => {
                         if (currentAudio) {
                             stopTTS(); // 🔴 정지
                         } else {
@@ -95,6 +99,12 @@
                     }}>
                         {currentAudio ? '⏹️' : '🔊'}
                     </button>
+                    <!-- 첫 문항 안내 문구 - 버튼 밖에 위치 -->
+                    {#if currentIdx === 0 && !currentAudio}
+                        <p style="font-size: 0.8em; color: #6366f1; text-align: center; margin-top: 4px; margin-bottom: 0;">
+                            🔊 버튼을 눌러 문항을 들어보세요. 2번째 문항부터는 자동으로 재생됩니다.
+                        </p>
+                    {/if}
                 </p>
 
                 <!-- 선택지 4개 (2열 그리드) -->
