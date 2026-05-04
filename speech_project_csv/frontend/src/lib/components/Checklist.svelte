@@ -129,6 +129,7 @@
                                     await onSaveDraft(); // 선택 즉시 임시저장
 
                                     // 자동 다음 이동 (STT 녹음 중이면 이동 안함 - 중복 이동 방지)
+                                    autoMoving = true;
                                     await new Promise(r => setTimeout(r, 1000))
                                     if (!isRecording) await onGoNext();
                                     autoMoving = false;
@@ -162,7 +163,7 @@
         <!-- 첫 번째 문항이거나 슬라이딩 중이면 비활성화 -->
         <button onclick={onGoPrev} disabled={currentIdx === 0 || isSliding}>← 이전</button>
         <!-- 마지막 문항이거나 슬라이딩 중이면 비활성화 -->
-        <button onclick={onGoNext} disabled={currentIdx === questions.length - 1 || isSliding}>다음 →</button>
+        <button onclick={() => { if (!autoMoving) onGoNext(); }} disabled={currentIdx === questions.length - 1 || isSliding || autoMoving}>다음 →</button>
     </div>
 
     <!-- 📍 문항 네비게이션 (상태별 색상 표시) -->
@@ -309,4 +310,27 @@ p { color: #475569; }
     transform: scale(1.1);
 }
 
+/* 스피커 버튼 힌트 애니메이션 */
+.speaker-btn {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: transform .1s;
+    margin: 0;
+    box-shadow: none;
+}
+.speaker-btn:hover { transform: scale(1.2); box-shadow: none; }
+
+.pulse-hint {
+    animation: speakerPulse 1.5s infinite;
+}
+
+@keyframes speakerPulse {
+    0%   { transform: scale(1);    filter: drop-shadow(0 0 0px #6366f1); }
+    50%  { transform: scale(1.2);  filter: drop-shadow(0 0 8px #6366f1); }
+    100% { transform: scale(1);    filter: drop-shadow(0 0 0px #6366f1); }
+}
 </style>
