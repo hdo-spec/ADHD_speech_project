@@ -7,7 +7,7 @@
     - 다크모드 body 클래스 관리
 -->
 <script>
-    import { onMount }    from 'svelte';
+    import { onMount, tick }    from 'svelte';
     import { getSessions, getQuestions, submitAnswers, generateTTS,
              saveDraft, loadDraft, deleteDraft } from '$lib/api.js';
     import { findBestMatch, playSound } from '$lib/stores.js';
@@ -229,12 +229,27 @@
     async function goNext() {
         if (currentIdx >= questions.length - 1 || isSliding) return;
         stopAll();
+
+        // 현재 문항이 미답변이면 다음 미답변 문항으로 이동
+        // 현재 문항이 답변된거면 그냥 다음 문항으로 이동
+        let nextIdx = currentIdx +1;
+        if (answers[questions[currentIdx].id] !== undefined) {
+            // 답변된 상태에서 다음 누르면 다음 미답변 문항으로 이동
+            const nextUnanswered = questions.findIndex(
+                (q, i) => i > currentIdx && answers[q.id] === undefined
+            );
+            if (nextUnanswered !== -1) nextIdx = nextUnanswered;
+        }
         isSliding = true; slideDir = 'left';
         await new Promise(r => setTimeout(r, 350)); // 애니메이션 대기
-        currentIdx++;
+        currentIdx = nextIdx;
         currentQuestion = questions[currentIdx];
         slideDir = ''; isSliding = false; transcript = '';
-        await speak(questions[currentIdx].text, questions[currentIdx]);
+        
+        // 이미 답변된 문항이면 tts 자동 재생 안함
+        if (answers[questions[currentIdx].id] === undefined) {
+            await speak(questions[currentIdx].text, questions[currentIdx]);
+        }
     }
 
     /**
@@ -341,10 +356,7 @@
 
         // TTS 안전 실행 (setTimeout 제거)
         await tick?.();
-
-        ttsTimer = setTimeout(() => {
-            speakSafe(currentQuestion.text, currentQuestion);
-        }, 500);
+    
     }
 
        
@@ -432,7 +444,9 @@
 
                     // 1.5초 후 다음 문항으로 자동 이동
                     if (currentIdx < questions.length - 1) {
-                        setTimeout(async () => { await goNext(); }, 1500);
+                        setTimeout(async () => { 
+                            if (answers[q.id] !== undefined) await goNext(); 
+                        }, 1500);
                     }
                 } else {
                     // 인식 실패: 재시도 안내
